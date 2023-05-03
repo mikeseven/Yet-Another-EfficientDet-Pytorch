@@ -58,59 +58,65 @@ def evaluate_coco(img_path, set_name, image_ids, coco, model, threshold=0.05):
     regressBoxes = BBoxTransform()
     clipBoxes = ClipBoxes()
 
-    for image_id in tqdm(image_ids):
-        image_info = coco.loadImgs(image_id)[0]
-        image_path = img_path + image_info['file_name']
+    if use_cuda:
+        from torch.backends import cudnn
+        cudnn.fastest = True
+        cudnn.benchmark = True
+        
+    with torch.inference_mode():
+        for image_id in tqdm(image_ids):
+            image_info = coco.loadImgs(image_id)[0]
+            image_path = img_path + image_info['file_name']
 
-        ori_imgs, framed_imgs, framed_metas = preprocess(image_path, max_size=input_sizes[compound_coef], mean=params['mean'], std=params['std'])
-        x = torch.from_numpy(framed_imgs[0])
+            ori_imgs, framed_imgs, framed_metas = preprocess(image_path, max_size=input_sizes[compound_coef], mean=params['mean'], std=params['std'])
+            x = torch.from_numpy(framed_imgs[0])
 
-        if use_cuda:
-            x = x.cuda(gpu)
-            if use_float16:
-                x = x.half()
+            if use_cuda:
+                x = x.cuda(gpu)
+                if use_float16:
+                    x = x.half()
+                else:
+                    x = x.float()
             else:
                 x = x.float()
-        else:
-            x = x.float()
 
-        x = x.unsqueeze(0).permute(0, 3, 1, 2)
-        features, regression, classification, anchors = model(x)
+            x = x.unsqueeze(0).permute(0, 3, 1, 2)
+            features, regression, classification, anchors = model(x)
 
-        preds = postprocess(x,
-                            anchors, regression, classification,
-                            regressBoxes, clipBoxes,
-                            threshold, nms_threshold)
-        
-        if not preds:
-            continue
+            preds = postprocess(x,
+                                anchors, regression, classification,
+                                regressBoxes, clipBoxes,
+                                threshold, nms_threshold)
+            
+            if not preds:
+                continue
 
-        preds = invert_affine(framed_metas, preds)[0]
+            preds = invert_affine(framed_metas, preds)[0]
 
-        scores = preds['scores']
-        class_ids = preds['class_ids']
-        rois = preds['rois']
+            scores = preds['scores']
+            class_ids = preds['class_ids']
+            rois = preds['rois']
 
-        if rois.shape[0] > 0:
-            # x1,y1,x2,y2 -> x1,y1,w,h
-            rois[:, 2] -= rois[:, 0]
-            rois[:, 3] -= rois[:, 1]
+            if rois.shape[0] > 0:
+                # x1,y1,x2,y2 -> x1,y1,w,h
+                rois[:, 2] -= rois[:, 0]
+                rois[:, 3] -= rois[:, 1]
 
-            bbox_score = scores
+                bbox_score = scores
 
-            for roi_id in range(rois.shape[0]):
-                score = float(bbox_score[roi_id])
-                label = int(class_ids[roi_id])
-                box = rois[roi_id, :]
+                for roi_id in range(rois.shape[0]):
+                    score = float(bbox_score[roi_id])
+                    label = int(class_ids[roi_id])
+                    box = rois[roi_id, :]
 
-                image_result = {
-                    'image_id': image_id,
-                    'category_id': label + 1,
-                    'score': float(score),
-                    'bbox': box.tolist(),
-                }
+                    image_result = {
+                        'image_id': image_id,
+                        'category_id': label + 1,
+                        'score': float(score),
+                        'bbox': box.tolist(),
+                    }
 
-                results.append(image_result)
+                    results.append(image_result)
 
     if not len(results):
         raise Exception('the model does not provide any valid output, check model architecture and the data input')

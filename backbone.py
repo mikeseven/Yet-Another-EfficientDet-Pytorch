@@ -8,10 +8,11 @@ from efficientdet.utils import Anchors
 
 
 class EfficientDetBackbone(nn.Module):
-    def __init__(self, num_classes=80, compound_coef=0, load_weights=False, **kwargs):
+    def __init__(self, num_classes=80, compound_coef=0, load_weights=False, onnx_export=False, **kwargs):
         super(EfficientDetBackbone, self).__init__()
         self.compound_coef = compound_coef
-
+        self.onnx_export = onnx_export
+        
         self.backbone_compound_coef = [0, 1, 2, 3, 4, 5, 6, 6, 7]
         self.fpn_num_filters = [64, 88, 112, 160, 224, 288, 384, 384, 384]
         self.fpn_cell_repeats = [3, 4, 5, 6, 7, 7, 8, 8, 8]
@@ -35,30 +36,35 @@ class EfficientDetBackbone(nn.Module):
         }
 
         num_anchors = len(self.aspect_ratios) * self.num_scales
-
+        
         self.bifpn = nn.Sequential(
             *[BiFPN(self.fpn_num_filters[self.compound_coef],
                     conv_channel_coef[compound_coef],
                     True if _ == 0 else False,
                     attention=True if compound_coef < 6 else False,
-                    use_p8=compound_coef > 7)
+                    use_p8=compound_coef > 7,
+                    onnx_export=self.onnx_export)
               for _ in range(self.fpn_cell_repeats[compound_coef])])
 
         self.num_classes = num_classes
         self.regressor = Regressor(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
                                    num_layers=self.box_class_repeats[self.compound_coef],
-                                   pyramid_levels=self.pyramid_levels[self.compound_coef])
+                                   pyramid_levels=self.pyramid_levels[self.compound_coef],
+                                   onnx_export=self.onnx_export)
         self.classifier = Classifier(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
                                      num_classes=num_classes,
                                      num_layers=self.box_class_repeats[self.compound_coef],
-                                     pyramid_levels=self.pyramid_levels[self.compound_coef])
+                                     pyramid_levels=self.pyramid_levels[self.compound_coef],
+                                     onnx_export=self.onnx_export)
 
-        self.anchors = Anchors(anchor_scale=self.anchor_scale[compound_coef],
-                               pyramid_levels=(torch.arange(self.pyramid_levels[self.compound_coef]) + 3).tolist(),
-                               **kwargs)
+        if not self.onnx_export:
+            self.anchors = Anchors(anchor_scale=self.anchor_scale[compound_coef],
+                                pyramid_levels=(torch.arange(self.pyramid_levels[self.compound_coef]) + 3).tolist(),
+                                **kwargs)
+            self.cached_anchors=None
 
-        self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights)
-
+        self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights, onnx_export=self.onnx_export)
+        
     def freeze_bn(self):
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
@@ -74,9 +80,15 @@ class EfficientDetBackbone(nn.Module):
 
         regression = self.regressor(features)
         classification = self.classifier(features)
-        anchors = self.anchors(inputs, inputs.dtype)
-
-        return features, regression, classification, anchors
+        
+        if not self.onnx_export:
+            # if inputs are always the same dimensions, anchors don't change, anchors can be precaculated
+            # and this avoids errors in int8 quantization, especially with position>256 on inputs>256
+            if self.cached_anchors is None:
+                self.cached_anchors = self.anchors(inputs, inputs.dtype)
+            return features, regression, classification, self.cached_anchors
+        
+        return regression, classification
 
     def init_backbone(self, path):
         state_dict = torch.load(path)
