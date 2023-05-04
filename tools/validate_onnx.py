@@ -131,7 +131,7 @@ def validate(model_path, val_path, ann_file, results_file_json, batch_size=10, g
     ort_device = ort.get_device()
 
     dataset = CocoDS(val_path, ann_file)
-    num_workers = 0 if ort_device == "cpu" else 4
+    num_workers = 0  # if ort_device == "cpu" else 4 TODO: sync issue with ORT
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
