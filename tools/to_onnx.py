@@ -14,7 +14,7 @@ class Params:
         return self.params.get(item, None)
 
 
-def change_batch_size(model, out_model_path: str, batch_size: str | int = "N"):
+def change_batch_size(model, batch_size: str | int = "N"):
     import struct
 
     # model = onnx.load(str(in_model_path))
@@ -63,8 +63,12 @@ if __name__ == "__main__":
     model.requires_grad_(False)
     model.eval()
 
+    # these names can be changed to whatever needed
     input_name = "input"
-    input_shape = (1, 3, 512, 512)
+    output_names = ["regression", "classification"]
+
+    input_size = EfficientDetBackbone.input_sizes[d_level]
+    input_shape = (1, 3, input_size, input_size)
     dummy_input = torch.randn(*input_shape, dtype=torch.float32).to(device=device)
     output_path = f"models/{model_name}.onnx"
     print(f"*** export model to {output_path}")
@@ -74,7 +78,7 @@ if __name__ == "__main__":
             dummy_input,
             output_path,
             input_names=[input_name],
-            output_names=["regression", "classification"],
+            output_names=output_names,
             opset_version=13,
             dynamic_axes={"input": {0: "N"}, "regression": {0: "N"}, "classification": {0: "N"}},
             do_constant_folding=True,
@@ -85,7 +89,7 @@ if __name__ == "__main__":
     overwrite_input_shapes = {input_name: input_shape}  # we use bs=1 to simplify graph further
     simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
 
-    print(f"*** saving simplified model {simp_model_name}")
+    print(f"*** saving simplified model to {simp_model_name}")
     # we restore dynamic batch size everywhere
     simplified_model = change_batch_size(simplified_model, batch_size="N")
     onnx.save(simplified_model, simp_model_name)
