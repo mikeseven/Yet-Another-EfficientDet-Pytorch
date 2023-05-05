@@ -59,6 +59,10 @@ def precalc_anchors(input_shape=(1, 3, 512, 512), d_level=0):
     return anchors
 
 
+regressBoxes = BBoxTransform()
+clipBoxes = ClipBoxes()
+
+
 def postprocess_image_results(
     results,
     img,
@@ -67,8 +71,6 @@ def postprocess_image_results(
     anchors,
     regression,
     classification,
-    regressBoxes,
-    clipBoxes,
     nms_threshold=0.5,
     threshold=0.05,
 ):
@@ -150,8 +152,6 @@ def validate(model_path, val_path, ann_file, results_file_json, batch_size=10, g
 
     # precalc anchors for 512x512 inputs, could be saved as numpy array
     anchors = precalc_anchors(input_shape=input_shape)
-    regressBoxes = BBoxTransform()
-    clipBoxes = ClipBoxes()
     results = []
 
     with torch.inference_mode():
@@ -176,8 +176,6 @@ def validate(model_path, val_path, ann_file, results_file_json, batch_size=10, g
                     anchors,
                     regression,
                     classification,
-                    regressBoxes=regressBoxes,
-                    clipBoxes=clipBoxes,
                 )
 
     # write output
@@ -219,5 +217,5 @@ if __name__ == "__main__":
     model_path = f"models/{model_name}_simp.onnx"
     results_file_json = f"{model_name}_bbox_results.json"
 
-    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=1)
+    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=10)
     eval_results_file(ann_file, results_file_json)
