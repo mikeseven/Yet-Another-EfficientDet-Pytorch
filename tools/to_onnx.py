@@ -50,7 +50,7 @@ with torch.inference_mode():
 
 print("*** simplify model")
 simp_model_name = f"models/{model_name}_simp.onnx"
-overwrite_input_shapes = {input_name: input_shape}  # None
+overwrite_input_shapes = {input_name: input_shape}  # or None to preserve dynamic batch size
 simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
 
 print(f"*** saving simplified model {simp_model_name}")
