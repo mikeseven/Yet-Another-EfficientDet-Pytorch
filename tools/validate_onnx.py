@@ -72,11 +72,16 @@ def postprocess_image_results(
     nms_threshold=0.5,
     threshold=0.05,
 ):
+    # convert numpy tensors to torch tensors
+    regression = torch.from_numpy(regression)
+    classification = torch.from_numpy(classification)
+    classification = torch.sigmoid(classification)  # apply sigmoid as post-process
+
     preds = postprocess(
         img,
         anchors,
-        torch.from_numpy(regression),
-        torch.from_numpy(classification),
+        regression,
+        classification,
         regressBoxes,
         clipBoxes,
         threshold,
@@ -214,5 +219,5 @@ if __name__ == "__main__":
     model_path = f"models/{model_name}_simp.onnx"
     results_file_json = f"{model_name}_bbox_results.json"
 
-    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=20)
+    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=1)
     eval_results_file(ann_file, results_file_json)
