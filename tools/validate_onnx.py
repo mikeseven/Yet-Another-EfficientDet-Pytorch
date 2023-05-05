@@ -10,6 +10,7 @@ import numpy as np
 import json
 from pycocotools.coco import COCO
 from torch.utils.data import DataLoader, Dataset
+from backbone import EfficientDetBackbone
 
 
 class Params:
@@ -46,12 +47,9 @@ class CocoDS(Dataset):
 def precalc_anchors(input_shape=(1, 3, 512, 512), d_level=0):
     from backbone import Anchors
 
-    pyramid_levels = [5, 5, 5, 5, 5, 5, 5, 5, 6]
-    anchor_scale = [4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 5.0, 4.0]
-
     anchors_mod = Anchors(
-        anchor_scale=anchor_scale[d_level],
-        pyramid_levels=(torch.arange(pyramid_levels[d_level]) + 3).tolist(),
+        anchor_scale=EfficientDetBackbone.anchor_scale[d_level],
+        pyramid_levels=(torch.arange(EfficientDetBackbone.pyramid_levels[d_level]) + 3).tolist(),
     )
 
     inputs = torch.randn(*input_shape, dtype=torch.float32)
@@ -59,6 +57,7 @@ def precalc_anchors(input_shape=(1, 3, 512, 512), d_level=0):
     return anchors
 
 
+# torch modules to compute boxes in postprocessing, stateless
 regressBoxes = BBoxTransform()
 clipBoxes = ClipBoxes()
 
