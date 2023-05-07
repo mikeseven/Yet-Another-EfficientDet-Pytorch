@@ -15,14 +15,16 @@ class EfficientDetBackbone(nn.Module):
     box_class_repeats = [3, 3, 3, 4, 4, 4, 5, 5, 5]
     pyramid_levels = [5, 5, 5, 5, 5, 5, 5, 5, 6]
     anchor_scale = [4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 5.0, 4.0]
+    default_aspect_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
+    default_num_scales = [2**0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
 
     def __init__(self, num_classes=80, compound_coef=0, load_weights=False, onnx_export=False, **kwargs):
         super(EfficientDetBackbone, self).__init__()
         self.compound_coef = compound_coef
         self.onnx_export = onnx_export
 
-        self.aspect_ratios = kwargs.get("ratios", [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)])
-        self.num_scales = len(kwargs.get("scales", [2**0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]))
+        self.aspect_ratios = kwargs.get("ratios", self.default_aspect_ratios)
+        self.num_scales = len(kwargs.get("scales", self.default_num_scales))
         conv_channel_coef = {
             # the channels of P3/P4/P5.
             0: [40, 112, 320],

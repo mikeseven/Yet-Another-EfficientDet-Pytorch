@@ -1,6 +1,6 @@
 # Author: Zylo117
 
-import torch
+import math
 
 from torch import nn
 import torch.nn.functional as F
@@ -14,8 +14,7 @@ class Conv2dStaticSamePadding(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, bias=True, groups=1, dilation=1, **kwargs):
         super().__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
-                              bias=bias, groups=groups)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, bias=bias, groups=groups)
         self.stride = self.conv.stride
         self.kernel_size = self.conv.kernel_size
         self.dilation = self.conv.dilation
@@ -32,10 +31,10 @@ class Conv2dStaticSamePadding(nn.Module):
 
     def forward(self, x):
         h, w = x.shape[-2:]
-        
-        extra_h = (torch.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
-        extra_v = (torch.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
-        
+
+        extra_h = (math.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
+        extra_v = (math.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
+
         left = extra_h // 2
         right = extra_h - left
         top = extra_v // 2
@@ -71,9 +70,9 @@ class MaxPool2dStaticSamePadding(nn.Module):
 
     def forward(self, x):
         h, w = x.shape[-2:]
-        
-        extra_h = (torch.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
-        extra_v = (torch.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
+
+        extra_h = (math.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
+        extra_v = (math.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
 
         left = extra_h // 2
         right = extra_h - left

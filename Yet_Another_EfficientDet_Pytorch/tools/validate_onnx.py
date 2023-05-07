@@ -1,16 +1,18 @@
+import json
+from pathlib import Path
+
+import numpy as np
 import onnx
 import onnxruntime as ort
-from tqdm.auto import tqdm
-from efficientdet.utils import BBoxTransform, ClipBoxes
-from utils.utils import preprocess, postprocess, invert_affine
-from pathlib import Path
-import yaml
 import torch
-import numpy as np
-import json
+import yaml
 from pycocotools.coco import COCO
 from torch.utils.data import DataLoader, Dataset
-from backbone import EfficientDetBackbone
+from tqdm.auto import tqdm
+
+from Yet_Another_EfficientDet_Pytorch.backbone import EfficientDetBackbone
+from Yet_Another_EfficientDet_Pytorch.efficientdet.utils import BBoxTransform, ClipBoxes
+from Yet_Another_EfficientDet_Pytorch.utils.utils import invert_affine, postprocess, preprocess
 
 
 class Params:
@@ -45,7 +47,7 @@ class CocoDS(Dataset):
 
 
 def precalc_anchors(input_shape=(1, 3, 512, 512), d_level=0):
-    from backbone import Anchors
+    from Yet_Another_EfficientDet_Pytorch.backbone import Anchors
 
     anchors_mod = Anchors(
         anchor_scale=EfficientDetBackbone.anchor_scale[d_level],
@@ -137,16 +139,15 @@ def validate(model_path, val_path, ann_file, results_file_json, batch_size=10, g
     ort_device = ort.get_device()
 
     dataset = CocoDS(val_path, ann_file)
-    num_workers = 0  # if ort_device == "cpu" else 4 TODO: sync issue with ORT
+
+    # loader is not put on GPU to avoid round trip to cpu to pass data to ORT
+    # this also avoids a synchronization issue between loader and ORT
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=num_workers,
-        # pin_memory=True,
-        # persistent_workers=True,
-        prefetch_factor=None if num_workers == 0 else 2,
-        # drop_last=False,
+        num_workers=0,  # slower to use multiprocessing on CPU
+        drop_last=False,
     )
 
     # precalc anchors for 512x512 inputs, could be saved as numpy array
@@ -216,5 +217,5 @@ if __name__ == "__main__":
     model_path = f"models/{model_name}_simp.onnx"
     results_file_json = f"{model_name}_bbox_results.json"
 
-    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=10)
+    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=1)
     eval_results_file(ann_file, results_file_json)

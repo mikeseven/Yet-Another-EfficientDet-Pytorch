@@ -1,9 +1,11 @@
-import torch
-from onnxsim import simplify
-import onnx
-from backbone import EfficientDetBackbone
-import yaml
 from pathlib import Path
+
+import onnx
+import torch
+import yaml
+from onnxsim import simplify
+
+from Yet_Another_EfficientDet_Pytorch.backbone import EfficientDetBackbone
 
 
 class Params:
@@ -14,11 +16,15 @@ class Params:
         return self.params.get(item, None)
 
 
-def change_batch_size(model, batch_size: str | int = "N"):
+def rebatch(infile, outfile, batch_size="N"):
+    # from https://github.com/onnx/onnx/issues/2182#issuecomment-881752539
     import struct
 
-    # model = onnx.load(str(in_model_path))
+    model = onnx.load(str(infile))
     graph = model.graph
+
+    # if isinstance(batch_size, str):
+    #     batch_size = -1
 
     # Change batch size in input, output and value_info
     for tensor in list(graph.input) + list(graph.value_info) + list(graph.output):
@@ -28,6 +34,8 @@ def change_batch_size(model, batch_size: str | int = "N"):
     for node in graph.node:
         if node.op_type != "Reshape":
             continue
+
+        # found a Reshape op
         for init in graph.initializer:
             # node.input[1] is expected to be a reshape
             if init.name != node.input[1]:
@@ -41,7 +49,8 @@ def change_batch_size(model, batch_size: str | int = "N"):
                 shape = bytearray(init.raw_data)
                 struct.pack_into("q", shape, 0, -1)
                 init.raw_data = bytes(shape)
-    return model
+
+    onnx.save(model, str(outfile))
 
 
 if __name__ == "__main__":
@@ -63,6 +72,10 @@ if __name__ == "__main__":
     model.requires_grad_(False)
     model.eval()
 
+    # save torch model
+    print(f"*** saving full torch model to models/{model_name}.pt")
+    torch.save(model, f"models/{model_name}.pt")
+
     # these names can be changed to whatever needed
     input_name = "input"
     output_names = ["regression", "classification"]
@@ -80,16 +93,20 @@ if __name__ == "__main__":
             input_names=[input_name],
             output_names=output_names,
             opset_version=13,
-            dynamic_axes={"input": {0: "N"}, "regression": {0: "N"}, "classification": {0: "N"}},
+            dynamic_axes={"input": {0: "N"}},
             do_constant_folding=True,
         )
 
     print("*** simplify model")
-    simp_model_name = f"models/{model_name}_simp.onnx"
     overwrite_input_shapes = {input_name: input_shape}  # we use bs=1 to simplify graph further
     simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
 
+    simp_model_name = Path(f"models/{model_name}_simp.onnx")
     print(f"*** saving simplified model to {simp_model_name}")
-    # we restore dynamic batch size everywhere
-    simplified_model = change_batch_size(simplified_model, batch_size="N")
-    onnx.save(simplified_model, simp_model_name)
+    onnx.save(simplified_model, str(simp_model_name))
+
+    # rbatch cannot work as last reshapes already use -1
+    # rebatch_name = Path(f"models/{model_name}_simp2.onnx")
+    # rebatch(simp_model_name, rebatch_name, batch_size="N")
+    # simp_model_name.unlink()
+    # rebatch_name.rename(simp_model_name)

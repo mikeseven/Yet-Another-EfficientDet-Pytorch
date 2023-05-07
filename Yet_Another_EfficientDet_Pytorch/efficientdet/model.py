@@ -363,7 +363,7 @@ class Regressor(nn.Module):
 
     def forward(self, inputs):
         feats = []
-        batch_size = inputs[0].shape[0]
+        # batch_size = inputs[0].shape[0]
         for feat, bn_list in zip(inputs, self.bn_list):
             for i, bn, conv in zip(range(self.num_layers), bn_list, self.conv_list):
                 feat = conv(feat)
@@ -372,7 +372,7 @@ class Regressor(nn.Module):
             feat = self.header(feat)
 
             feat = feat.permute(0, 2, 3, 1)
-            feat = feat.contiguous().view(batch_size, -1, 4)
+            feat = feat.contiguous().view(feat.shape[0], -1, 4)
 
             feats.append(feat)
 
@@ -406,7 +406,7 @@ class Classifier(nn.Module):
 
     def forward(self, inputs):
         feats = []
-        batch_size = inputs[0].shape[0]
+        # batch_size = inputs[0].shape[0]
 
         for feat, bn_list in zip(inputs, self.bn_list):
             for i, bn, conv in zip(range(self.num_layers), bn_list, self.conv_list):
@@ -418,9 +418,9 @@ class Classifier(nn.Module):
             feat = feat.permute(0, 2, 3, 1)
             if not self.onnx_export:
                 feat = feat.contiguous().view(
-                    batch_size, feat.shape[1], feat.shape[2], self.num_anchors, self.num_classes
+                    feat.shape[0], feat.shape[1], feat.shape[2], self.num_anchors, self.num_classes
                 )
-            feat = feat.contiguous().view(batch_size, -1, self.num_classes)
+            feat = feat.contiguous().view(feat.shape[0], -1, self.num_classes)
 
             feats.append(feat)
 

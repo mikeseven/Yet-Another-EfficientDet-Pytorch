@@ -1,14 +1,51 @@
 [project]
-name = "Yet-Another-EfficientDet-Pytorch"
-authors = ["zylo117", "mikeseven"]
-description = "pytorch re-implement of the official EfficientDet"
-readme = "readme.md"
+name = "Yet_Another_EfficientDet_Pytorch"
+authors = [{name="zylo117"}, {name="mikeseven"}]
+readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["efficientdet", "object detection"]
-license = {text = "LPGL-3"}
-classifiers = [
-    "Programming Language :: Python :: 3",
+license = {file = "LICENSE"}
+classifiers = ["Programming Language :: Python :: 3"]
+#version='0.1.0'
+dynamic = ["version"]
+description = ""
+
+[project.urls]
+"Homepage" = "https://github.com/mikeseven/Yet-Another-EfficientDet-Pytorch"
+"Bug Tracker" = "https://github.com/mikeseven/Yet-Another-EfficientDet-Pytorch/issues"
+
+
+[tool.setuptools]
+packages = ['Yet_Another_EfficientDet_Pytorch']
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.hatch]
+packages = ['Yet_Another_EfficientDet_Pytorch']
+
+[tool.hatch.build]
+include = [
+  "Yet_Another_EfficientDet_Pytorch/*.py",
+  "projects",
 ]
+exclude = [
+  ".gitignore",
+  ".vscode",
+]
+[tool.hatch.version]
+path = "Yet_Another_EfficientDet_Pytorch/__init__.py"
+
+[tool.hatch.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+# [build-system]
+# requires = ["setuptools>=61.0"]
+# build-backend = "setuptools.build_meta"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 exclude = '''
@@ -46,3 +83,4 @@ line_length = 120
 lines-after-imports = 2
 multi_line_output = 3
 use_parentheses = true
+
