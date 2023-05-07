@@ -4,12 +4,14 @@ This repo contains fixes to original repo:
 - simplified ONNX export model for inference:
     - no pyramid features, no anchors in model output
     - no sigmoid on classification output (better to leave it as post-processing when quantizing)
-    
+    - moved anchor generation as post-process 
+
 - to output models to ONNX, adapted from [issue 111](https://github.com/zylo117/Yet-Another-EfficientDet-Pytorch/issues/111)
-- packaging ([PR 551](https://github.com/zylo117/Yet-Another-EfficientDet-Pytorch/pull/551))
 - params idea from [murdockhou](https://github.com/murdockhou/Yet-Another-EfficientDet-Pytorch-Convert-ONNX-TVM/blob/master/convert/convert_onnx.py)
 - tools to download released weights adapted from [PR 179](https://github.com/zylo117/Yet-Another-EfficientDet-Pytorch/pull/179/files)
+- packaging compliant with modern python & hatch
 - replace tensorboardX with pytorch tensorboard interface
+- moved all code into its own package
 - distributed training with lightning (**todo**)
 
 Other conventions:
