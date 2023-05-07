@@ -20,9 +20,9 @@ from tqdm import tqdm
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-from backbone import EfficientDetBackbone
-from efficientdet.utils import BBoxTransform, ClipBoxes
-from utils.utils import preprocess, invert_affine, postprocess, boolean_string
+from .backbone import EfficientDetBackbone
+from .efficientdet.utils import BBoxTransform, ClipBoxes
+from .utils.utils import preprocess, invert_affine, postprocess, boolean_string
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--project", type=str, default="coco", help="project file that contains parameters")

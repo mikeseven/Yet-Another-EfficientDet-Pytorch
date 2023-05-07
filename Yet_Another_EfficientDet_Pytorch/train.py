@@ -10,16 +10,17 @@ import traceback
 import numpy as np
 import torch
 import yaml
-from backbone import EfficientDetBackbone
-from efficientdet.dataset import Augmenter, CocoDataset, Normalizer, Resizer, collater
-from efficientdet.loss import FocalLoss
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 from tqdm.autonotebook import tqdm
-from utils.sync_batchnorm import patch_replication_callback
-from utils.utils import CustomDataParallel, boolean_string, get_last_weights, init_weights, replace_w_sync_bn
+
+from .backbone import EfficientDetBackbone
+from .efficientdet.dataset import Augmenter, CocoDataset, Normalizer, Resizer, collater
+from .efficientdet.loss import FocalLoss
+from .utils.sync_batchnorm import patch_replication_callback
+from .utils.utils import CustomDataParallel, boolean_string, get_last_weights, init_weights, replace_w_sync_bn
 
 
 class Params:

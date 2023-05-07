@@ -8,11 +8,12 @@ import time
 import cv2
 import numpy as np
 import torch
-from backbone import EfficientDetBackbone
-from efficientdet.utils import BBoxTransform, ClipBoxes
 from matplotlib import colors
 from torch.backends import cudnn
-from utils.utils import (
+
+from .backbone import EfficientDetBackbone
+from .efficientdet.utils import BBoxTransform, ClipBoxes
+from .utils.utils import (
     STANDARD_COLORS,
     get_index_label,
     invert_affine,

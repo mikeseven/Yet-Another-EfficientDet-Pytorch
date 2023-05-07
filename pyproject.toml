@@ -26,7 +26,7 @@ packages = ['Yet_Another_EfficientDet_Pytorch']
 
 [tool.hatch.build]
 include = [
-  "Yet_Another_EfficientDet_Pytorch/*.py",
+  "Yet_Another_EfficientDet_Pytorch",
   "projects",
 ]
 exclude = [
