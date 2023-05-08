@@ -217,5 +217,5 @@ if __name__ == "__main__":
     model_path = f"models/{model_name}_simp.onnx"
     results_file_json = f"{model_name}_bbox_results.json"
 
-    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=1)
+    validate(model_path, val_path, ann_file, results_file_json=results_file_json, batch_size=10)
     eval_results_file(ann_file, results_file_json)

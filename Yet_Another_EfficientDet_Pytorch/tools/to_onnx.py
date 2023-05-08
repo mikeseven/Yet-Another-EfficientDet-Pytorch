@@ -105,8 +105,7 @@ if __name__ == "__main__":
     print(f"*** saving simplified model to {simp_model_name}")
     onnx.save(simplified_model, str(simp_model_name))
 
-    # rbatch cannot work as last reshapes already use -1
-    # rebatch_name = Path(f"models/{model_name}_simp2.onnx")
-    # rebatch(simp_model_name, rebatch_name, batch_size="N")
-    # simp_model_name.unlink()
-    # rebatch_name.rename(simp_model_name)
+    rebatch_name = Path(f"models/{model_name}_simp2.onnx")
+    rebatch(simp_model_name, rebatch_name, batch_size="N")
+    simp_model_name.unlink()
+    rebatch_name.rename(simp_model_name)
