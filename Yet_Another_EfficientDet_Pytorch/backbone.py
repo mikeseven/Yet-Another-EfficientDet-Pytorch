@@ -18,7 +18,7 @@ class EfficientDetBackbone(nn.Module):
     default_aspect_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
     default_num_scales = [2**0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
 
-    def __init__(self, num_classes=80, compound_coef=0, load_weights=False, onnx_export=False, **kwargs):
+    def __init__(self, num_classes=90, compound_coef=0, load_weights=False, onnx_export=False, **kwargs):
         super(EfficientDetBackbone, self).__init__()
         self.compound_coef = compound_coef
         self.onnx_export = onnx_export

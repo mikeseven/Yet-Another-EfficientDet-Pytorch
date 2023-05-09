@@ -72,40 +72,40 @@ if __name__ == "__main__":
     model.requires_grad_(False)
     model.eval()
 
-    # save torch model
-    print(f"*** saving full torch model to models/{model_name}.pt")
-    torch.save(model, f"models/{model_name}.pt")
+    # # save torch model
+    # print(f"*** saving full torch model to models/{model_name}.pt")
+    # torch.save(model, f"models/{model_name}.pt")
 
-    # these names can be changed to whatever needed
-    input_name = "input"
-    output_names = ["regression", "classification"]
+    # # these names can be changed to whatever needed
+    # input_name = "input"
+    # output_names = ["regression", "classification"]
 
-    input_size = EfficientDetBackbone.input_sizes[d_level]
-    input_shape = (1, 3, input_size, input_size)
-    dummy_input = torch.randn(*input_shape, dtype=torch.float32).to(device=device)
-    output_path = f"models/{model_name}.onnx"
-    print(f"*** export model to {output_path}")
-    with torch.inference_mode():
-        torch.onnx.export(
-            model,
-            dummy_input,
-            output_path,
-            input_names=[input_name],
-            output_names=output_names,
-            opset_version=13,
-            dynamic_axes={"input": {0: "N"}},
-            do_constant_folding=True,
-        )
+    # input_size = EfficientDetBackbone.input_sizes[d_level]
+    # input_shape = (1, 3, input_size, input_size)
+    # dummy_input = torch.randn(*input_shape, dtype=torch.float32).to(device=device)
+    # output_path = f"models/{model_name}.onnx"
+    # print(f"*** export model to {output_path}")
+    # with torch.inference_mode():
+    #     torch.onnx.export(
+    #         model,
+    #         dummy_input,
+    #         output_path,
+    #         input_names=[input_name],
+    #         output_names=output_names,
+    #         opset_version=13,
+    #         dynamic_axes={"input": {0: "N"}},
+    #         do_constant_folding=True,
+    #     )
 
-    print("*** simplify model")
-    overwrite_input_shapes = {input_name: input_shape}  # we use bs=1 to simplify graph further
-    simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
+    # print("*** simplify model")
+    # overwrite_input_shapes = {input_name: input_shape}  # we use bs=1 to simplify graph further
+    # simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
 
-    simp_model_name = Path(f"models/{model_name}_simp.onnx")
-    print(f"*** saving simplified model to {simp_model_name}")
-    onnx.save(simplified_model, str(simp_model_name))
+    # simp_model_name = Path(f"models/{model_name}_simp.onnx")
+    # print(f"*** saving simplified model to {simp_model_name}")
+    # onnx.save(simplified_model, str(simp_model_name))
 
-    rebatch_name = Path(f"models/{model_name}_simp2.onnx")
-    rebatch(simp_model_name, rebatch_name, batch_size="N")
-    simp_model_name.unlink()
-    rebatch_name.rename(simp_model_name)
+    # rebatch_name = Path(f"models/{model_name}_simp2.onnx")
+    # rebatch(simp_model_name, rebatch_name, batch_size="N")
+    # simp_model_name.unlink()
+    # rebatch_name.rename(simp_model_name)
