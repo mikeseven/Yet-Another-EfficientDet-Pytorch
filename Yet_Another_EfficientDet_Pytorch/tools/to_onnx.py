@@ -53,12 +53,14 @@ def rebatch(infile, outfile, batch_size="N"):
     onnx.save(model, str(outfile))
 
 
-if __name__ == "__main__":
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    params = Params(f"projects/coco.yml")
-
-    d_level = 0
+def convert(d_level=0):
     model_name = f"efficientdet-d{d_level}"
+    print(f"*** Exporting {model_name} ***")
+
+    weights_path = Path(f"weights/{model_name}.pth")
+    if not weights_path.exists():
+        print(f"{weights_path} not found")
+        return
 
     model = EfficientDetBackbone(
         num_classes=len(params.obj_list),
@@ -68,44 +70,57 @@ if __name__ == "__main__":
         scales=eval(params.anchors_scales),
     )
     model = model.to(device=device)
-    model.load_state_dict(torch.load(f"weights/{model_name}.pth", map_location=device))
+    model.load_state_dict(torch.load(weights_path, map_location=device))
     model.requires_grad_(False)
     model.eval()
 
-    # # save torch model
-    # print(f"*** saving full torch model to models/{model_name}.pt")
-    # torch.save(model, f"models/{model_name}.pt")
+    # save torch model
+    print(f"*** saving full torch model to models/{model_name}.pt")
+    torch.save(model, f"models/{model_name}.pt")
 
-    # # these names can be changed to whatever needed
-    # input_name = "input"
-    # output_names = ["regression", "classification"]
+    # these names can be changed to whatever needed
+    input_name = "input"
+    output_names = ["regression", "classification"]
 
-    # input_size = EfficientDetBackbone.input_sizes[d_level]
-    # input_shape = (1, 3, input_size, input_size)
-    # dummy_input = torch.randn(*input_shape, dtype=torch.float32).to(device=device)
-    # output_path = f"models/{model_name}.onnx"
-    # print(f"*** export model to {output_path}")
-    # with torch.inference_mode():
-    #     torch.onnx.export(
-    #         model,
-    #         dummy_input,
-    #         output_path,
-    #         input_names=[input_name],
-    #         output_names=output_names,
-    #         opset_version=13,
-    #         dynamic_axes={"input": {0: "N"}},
-    #         do_constant_folding=True,
-    #     )
+    input_size = EfficientDetBackbone.input_sizes[d_level]
+    input_shape = (1, 3, input_size, input_size)
+    dummy_input = torch.randn(*input_shape, dtype=torch.float32).to(device=device)
+    output_path = f"models/{model_name}.onnx"
+    print(f"*** export model to {output_path}")
+    with torch.inference_mode():
+        torch.onnx.export(
+            model,
+            dummy_input,
+            output_path,
+            input_names=[input_name],
+            output_names=output_names,
+            opset_version=13,
+            dynamic_axes={"input": {0: "N"}},
+            do_constant_folding=True,
+        )
 
-    # print("*** simplify model")
-    # overwrite_input_shapes = {input_name: input_shape}  # we use bs=1 to simplify graph further
-    # simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
+    print("*** simplify model")
+    overwrite_input_shapes = {input_name: input_shape}  # we use bs=1 to simplify graph further
+    simplified_model, check = simplify(output_path, overwrite_input_shapes=overwrite_input_shapes)
 
-    # simp_model_name = Path(f"models/{model_name}_simp.onnx")
-    # print(f"*** saving simplified model to {simp_model_name}")
-    # onnx.save(simplified_model, str(simp_model_name))
+    simp_model_name = Path(f"models/{model_name}_simp.onnx")
+    print(f"*** saving simplified model to {simp_model_name}")
+    onnx.save(simplified_model, str(simp_model_name))
 
-    # rebatch_name = Path(f"models/{model_name}_simp2.onnx")
-    # rebatch(simp_model_name, rebatch_name, batch_size="N")
-    # simp_model_name.unlink()
-    # rebatch_name.rename(simp_model_name)
+    rebatch_name = Path(f"models/{model_name}_simp2.onnx")
+    rebatch(simp_model_name, rebatch_name, batch_size="N")
+    simp_model_name.unlink()
+    rebatch_name.rename(simp_model_name)
+
+
+if __name__ == "__main__":
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    params = Params(f"projects/coco.yml")
+
+    # override onnxsim timeout for large models (d6+)
+    import os
+
+    os.environ["ONNXSIM_FIXED_POINT_ITERS"] = "100"
+
+    for d_level in range(9):
+        convert(d_level)

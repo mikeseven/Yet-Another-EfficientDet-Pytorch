@@ -1,9 +1,14 @@
 # Author: Zylo117
 
 import math
-
+import torch
 from torch import nn
 import torch.nn.functional as F
+
+
+@torch.fx.wrap
+def fx_wrapped_pad(x, left, right, top, bottom):
+    return F.pad(x, (left, right, top, bottom))
 
 
 class Conv2dStaticSamePadding(nn.Module):
@@ -40,7 +45,7 @@ class Conv2dStaticSamePadding(nn.Module):
         top = extra_v // 2
         bottom = extra_v - top
 
-        x = F.pad(x, [left, right, top, bottom])
+        x = fx_wrapped_pad(x, left, right, top, bottom)
 
         x = self.conv(x)
         return x
@@ -67,6 +72,7 @@ class MaxPool2dStaticSamePadding(nn.Module):
             self.kernel_size = [self.kernel_size] * 2
         elif len(self.kernel_size) == 1:
             self.kernel_size = [self.kernel_size[0]] * 2
+        self.pad = nn.ConstantPad2d(padding=(0, 0, 0, 0), value=0)
 
     def forward(self, x):
         h, w = x.shape[-2:]
@@ -79,7 +85,7 @@ class MaxPool2dStaticSamePadding(nn.Module):
         top = extra_v // 2
         bottom = extra_v - top
 
-        x = F.pad(x, [left, right, top, bottom])
+        x = fx_wrapped_pad(x, left, right, top, bottom)
 
         x = self.pool(x)
         return x
