@@ -72,7 +72,6 @@ class MaxPool2dStaticSamePadding(nn.Module):
             self.kernel_size = [self.kernel_size] * 2
         elif len(self.kernel_size) == 1:
             self.kernel_size = [self.kernel_size[0]] * 2
-        self.pad = nn.ConstantPad2d(padding=(0, 0, 0, 0), value=0)
 
     def forward(self, x):
         h, w = x.shape[-2:]

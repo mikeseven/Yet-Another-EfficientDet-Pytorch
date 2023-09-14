@@ -122,5 +122,5 @@ if __name__ == "__main__":
 
     os.environ["ONNXSIM_FIXED_POINT_ITERS"] = "100"
 
-    for d_level in range(9):
+    for d_level in range(0, 0 + 1):
         convert(d_level)

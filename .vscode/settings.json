@@ -22,5 +22,7 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
-  "python.formatting.provider": "none"
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/Yet_Another_EfficientDet_Pytorch/"
+  ]
 }

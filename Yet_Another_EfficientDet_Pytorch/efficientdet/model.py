@@ -371,6 +371,7 @@ class Regressor(nn.Module):
                 feat = self.swish(feat)
             feat = self.header(feat)
 
+            # [mbs] remove permute, reshape
             feat = feat.permute(0, 2, 3, 1)
             feat = feat.contiguous().view(feat.shape[0], (feat.shape[1] * feat.shape[2] * feat.shape[3]) // 4, 4)
 
@@ -379,6 +380,7 @@ class Regressor(nn.Module):
         feats = torch.cat(feats, dim=1)
 
         return feats
+        # return tuple(feats)
 
 
 class Classifier(nn.Module):
@@ -415,6 +417,7 @@ class Classifier(nn.Module):
                 feat = self.swish(feat)
             feat = self.header(feat)
 
+            # [mbs] remove permute, reshape
             feat = feat.permute(0, 2, 3, 1)
             if not self.onnx_export:
                 feat = feat.contiguous().view(
@@ -432,6 +435,7 @@ class Classifier(nn.Module):
             feats = feats.sigmoid()  # leave last sigmoid as post-processing
 
         return feats
+        # return tuple(feats)
 
 
 class EfficientNet(nn.Module):

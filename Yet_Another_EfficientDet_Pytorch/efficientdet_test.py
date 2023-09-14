@@ -11,9 +11,9 @@ import torch
 from matplotlib import colors
 from torch.backends import cudnn
 
-from .backbone import EfficientDetBackbone
-from .efficientdet.utils import BBoxTransform, ClipBoxes
-from .utils.utils import (
+from Yet_Another_EfficientDet_Pytorch.backbone import EfficientDetBackbone
+from Yet_Another_EfficientDet_Pytorch.efficientdet.utils import BBoxTransform, ClipBoxes
+from Yet_Another_EfficientDet_Pytorch.utils.utils import (
     STANDARD_COLORS,
     get_index_label,
     invert_affine,
